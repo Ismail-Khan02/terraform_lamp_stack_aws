@@ -1,15 +1,14 @@
-# Configure the AWS Provider
+# provider.tf
 provider "aws" {
   region = var.aws_region
 }
 
-# Lookup the latest AWS AMI for Amazon Linux 2
-data "aws_ami" "amazon_linux_2" {
+data "aws_ami" "amazon_linux_2023" {
   most_recent = true
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+    values = ["al2023-ami-2023.*-x86_64"]
   }
 
   filter {
@@ -17,7 +16,5 @@ data "aws_ami" "amazon_linux_2" {
     values = ["hvm"]
   }
 
-  owners = ["137112412989"] # Amazon's official AWS account ID
+  owners = ["137112412989"] 
 }
-
-
