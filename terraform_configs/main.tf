@@ -14,3 +14,13 @@ resource "aws_instance" "lamp_instance" {
   }
 }
 
+resource "aws_eip" "lamp_eip" {
+  instance = aws_instance.lamp_instance.id
+  domain  = "vpc"
+
+  tags = {
+    Name = "LAMP_EIP"
+    Environment = var.environment
+  } 
+  
+}

@@ -1,7 +1,7 @@
 # Outputs for important information
 output "instance_public_ip" {
   description = "The public IP address of the EC2 instance"
-  value       = aws_instance.lamp_instance.public_ip
+  value       = aws_eip.lamp_eip.public_ip
 }
 
 output "instance_id" {
@@ -16,7 +16,7 @@ output "security_group_id" {
 
 output "webserver_url" {
   description = "The URL to access the web server"
-  value       = "http://${aws_instance.lamp_instance.public_ip}/my-app.php"
+  value       = "http://${aws_eip.lamp_eip.public_ip}/my-app.php"
 }
 
 output "cloudfront_url" {
