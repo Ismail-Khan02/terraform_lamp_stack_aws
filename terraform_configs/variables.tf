@@ -31,11 +31,11 @@ variable "public_subnet_cidrs" {
 }
 
 # --- Instance Configuration ---
-variable "instance_type"  {
+variable "instance_type" {
   description = "EC2 instance type"
   type        = string
   default     = "t2.micro"
-  
+
 }
 
 variable "db_password" {
