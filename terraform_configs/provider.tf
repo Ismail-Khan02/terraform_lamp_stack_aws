@@ -16,5 +16,5 @@ data "aws_ami" "amazon_linux_2023" {
     values = ["hvm"]
   }
 
-  owners = ["137112412989"] 
+  owners = ["137112412989"]
 }
