@@ -13,7 +13,7 @@ resource "aws_cloudfront_distribution" "lamp_cdn" {
     
     enabled             = true
     comment             = "CDN for LAMP stack"
-    default_root_object = "index.html"
+    default_root_object = "my-app.php"
     
     default_cache_behavior {
         target_origin_id       = "lamp-origin"
