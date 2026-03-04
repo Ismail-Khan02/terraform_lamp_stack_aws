@@ -12,7 +12,7 @@ resource "aws_security_group" "web_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-/*   ingress {
+  /*   ingress {
     description = "HTTPS from anywhere"
     from_port   = 443
     to_port     = 443

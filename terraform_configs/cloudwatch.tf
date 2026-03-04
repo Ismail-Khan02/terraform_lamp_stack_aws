@@ -3,27 +3,27 @@ resource "aws_cloudwatch_log_group" "lamp_log_group" {
   retention_in_days = 7
 
   tags = {
-    Name = "LAMP_Log_Group"
+    Name        = "LAMP_Log_Group"
     Environment = var.environment
   }
-  
+
 }
 
 resource "aws_sns_topic" "lamp_notifications" {
   name = "lamp-notifications"
 
   tags = {
-    Name = "LAMP_Notifications"
+    Name        = "LAMP_Notifications"
     Environment = var.environment
   }
-  
+
 }
 
-resource "aws_sns_topic_subscription" "lamp_subscription" { 
+resource "aws_sns_topic_subscription" "lamp_subscription" {
   topic_arn = aws_sns_topic.lamp_notifications.arn
   protocol  = "email"
   endpoint  = var.alert_email
-  
+
 }
 
 resource "aws_cloudwatch_metric_alarm" "lamp_cpu_utilization" {
@@ -35,19 +35,19 @@ resource "aws_cloudwatch_metric_alarm" "lamp_cpu_utilization" {
   period              = 300
   statistic           = "Average"
   threshold           = 80
-  alarm_actions = [aws_sns_topic.lamp_notifications.arn]
+  alarm_actions       = [aws_sns_topic.lamp_notifications.arn]
 
-  alarm_description   = "This alarm triggers when CPU utilization exceeds 80% for 10 minutes."
-  
+  alarm_description = "This alarm triggers when CPU utilization exceeds 80% for 10 minutes."
+
   dimensions = {
     InstanceId = aws_instance.lamp_instance.id
   }
 
   tags = {
-    Name = "LAMP_CPU_Alarm"
+    Name        = "LAMP_CPU_Alarm"
     Environment = var.environment
   }
-  
+
 }
 
 resource "aws_cloudwatch_metric_alarm" "status_check_failed" {
@@ -59,17 +59,17 @@ resource "aws_cloudwatch_metric_alarm" "status_check_failed" {
   period              = 300
   statistic           = "Average"
   threshold           = 0
-  alarm_actions = [aws_sns_topic.lamp_notifications.arn]
+  alarm_actions       = [aws_sns_topic.lamp_notifications.arn]
 
-  alarm_description   = "This alarm triggers when the instance fails status checks."
+  alarm_description = "This alarm triggers when the instance fails status checks."
 
   dimensions = {
     InstanceId = aws_instance.lamp_instance.id
   }
 
   tags = {
-    Name = "LAMP_Status_Check_Alarm"
+    Name        = "LAMP_Status_Check_Alarm"
     Environment = var.environment
   }
-  
+
 }

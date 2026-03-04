@@ -5,7 +5,7 @@ resource "aws_instance" "lamp_instance" {
   vpc_security_group_ids = [aws_security_group.web_sg.id]
   subnet_id              = aws_subnet.public-subnet-1.id
   user_data              = file("install_lamp.sh")
-  iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
+  iam_instance_profile   = aws_iam_instance_profile.ssm_profile.name
 
 
 
@@ -16,11 +16,11 @@ resource "aws_instance" "lamp_instance" {
 
 resource "aws_eip" "lamp_eip" {
   instance = aws_instance.lamp_instance.id
-  domain  = "vpc"
+  domain   = "vpc"
 
   tags = {
-    Name = "LAMP_EIP"
+    Name        = "LAMP_EIP"
     Environment = var.environment
-  } 
-  
+  }
+
 }
