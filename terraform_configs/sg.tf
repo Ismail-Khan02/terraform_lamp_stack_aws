@@ -1,19 +1,15 @@
-# Create a security group allowing HTTP traffic from CloudFront only
-data "aws_ec2_managed_prefix_list" "cloudfront" {
-  name = "com.amazonaws.global.cloudfront.origin-facing"
-}
-
+# Create a security group allowing HTTP traffic access
 resource "aws_security_group" "web_sg" {
   name        = "web_server_sg"
-  description = "Allow HTTP from CloudFront only"
+  description = "Allow HTTP traffic to the web server"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "HTTP from CloudFront"
+    description = "HTTP from anywhere"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront.id]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {

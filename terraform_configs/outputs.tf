@@ -18,8 +18,3 @@ output "webserver_url" {
   description = "The URL to access the web server"
   value       = "http://${aws_eip.lamp_eip.public_ip}/my-app.php"
 }
-
-output "cloudfront_url" {
-  description = "The URL of the CloudFront distribution"
-  value       = "https://${aws_cloudfront_distribution.lamp_cdn.domain_name}/"
-}

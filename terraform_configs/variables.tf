@@ -5,12 +5,6 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-/* variable "aws_region_alias" {
-  description = "The alias for the AWS region provider"
-  type        = string
-  default     = "us_east_1"
-} */
-
 variable "availability_zones" {
   description = "List of availability zones"
   type        = list(string)
@@ -37,12 +31,12 @@ variable "public_subnet_cidrs" {
 }
 
 # --- Instance Configuration ---
-
-/* variable "key_name" {
-  description = "The name of the key pair"
+variable "instance_type"  {
+  description = "EC2 instance type"
   type        = string
-  default     = "my-key-pair"
-} */
+  default     = "t2.micro"
+  
+}
 
 variable "db_password" {
   description = "Password for the database user"
