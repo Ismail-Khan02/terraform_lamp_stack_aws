@@ -27,98 +27,68 @@ sudo systemctl start amazon-cloudwatch-agent
 sudo systemctl enable amazon-cloudwatch-agent
 
 # 1. Update the system and install necessary packages
-# Amazon Linux 2023 uses 'dnf' instead of 'yum'
 sudo dnf update -y
 sudo dnf install -y httpd wget php-fpm php-mysqli php-json php php-devel mariadb105-server
 
-# Install Composer manually since it's not available in the default repos
-curl -sS https://getcomposer.org/installer | php
-sudo mv composer.phar /usr/local/bin/composer
-sudo chmod +x /usr/local/bin/composer
-
-# Install AWS SDK for PHP
-cd /var/www/html && composer require aws/aws-sdk-php --no-interaction
-
-# 2. Start and Enable Services (Apache & MariaDB)
+# 2. Start Apache and MariaDB early so /var/www/html exists for Composer
 sudo systemctl start httpd
 sudo systemctl enable httpd
 sudo systemctl start mariadb
 sudo systemctl enable mariadb
 
-# 3. Configure File Permissions
-# Add ec2-user to the apache group so you can edit files later if needed
-sudo usermod -a -G apache ec2-user
-sudo chown -R ec2-user:apache /var/www
-sudo chmod 2775 /var/www
-find /var/www -type d -exec sudo chmod 2775 {} \;
-find /var/www -type f -exec sudo chmod 0664 {} \;
+# 3. Install Composer
+export HOME=/root
+curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php
+php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+chmod +x /usr/local/bin/composer
 
-# 4. Secure the Database (Set Root Password)
+# 4. Install AWS SDK for PHP
+mkdir -p /var/www/html
+cd /var/www/html && /usr/local/bin/composer require aws/aws-sdk-php --no-interaction
 
-# Fetch password from Secrets Manager (region must match your provider)
+# 5. Fetch DB password from Secrets Manager
 DB_PASS=$(aws secretsmanager get-secret-value \
   --secret-id lamp/db_password \
   --region us-east-1 \
   --query SecretString \
   --output text | python3 -c "import sys,json; print(json.load(sys.stdin)['password'])")
 
-# This sets the root password to $DB_PASS, which should be defined as an environment variable in Terraform
+# 6. Set root DB password
 sudo mysqladmin -u root password "$DB_PASS"
 
-# 5. Create the application file with CSS styling
-# Note: Dollar signs are escaped (\$) to prevent Bash from interpreting them
-cat <<EOF | sudo tee /var/www/html/my-app.php
+# 7. Write my-app.php BEFORE setting permissions
+cat <<'PHPEOF' | sudo tee /var/www/html/my-app.php
 <?php
-// 1. Configuration
-\$servername = "localhost";
-\$username   = "root";
-\$dbname     = "lamp_test_db";
+$servername = "localhost";
+$username   = "root";
+$dbname     = "lamp_test_db";
 
-// Fetch password from AWS Secrets Manager
 require '/var/www/html/vendor/autoload.php';
 function get_db_password() {
-    \$client = new Aws\SecretsManager\SecretsManagerClient([
+    $client = new Aws\SecretsManager\SecretsManagerClient([
         'region'  => 'us-east-1',
         'version' => 'latest'
     ]);
-    \$result = \$client->getSecretValue(['SecretId' => 'lamp/db_password']);
-    \$secret = json_decode(\$result['SecretString'], true);
-    return \$secret['password'];
+    $result = $client->getSecretValue(['SecretId' => 'lamp/db_password']);
+    $secret = json_decode($result['SecretString'], true);
+    return $secret['password'];
 }
-\$password = get_db_password();
+$password = get_db_password();
 
-// 2. Create Connection
-\$conn = new mysqli(\$servername, \$username, \$password);
-
-// Check Connection
-if (\$conn->connect_error) {
-    die("Connection failed: " . \$conn->connect_error);
+$conn = new mysqli($servername, $username, $password);
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
 
-// 3. Setup Database and Table
-\$sql = "CREATE DATABASE IF NOT EXISTS \$dbname";
-if (!\$conn->query(\$sql)) {
-    echo "Error creating database: " . \$conn->error;
-}
-
-\$conn->select_db(\$dbname);
-
-\$tableSql = "CREATE TABLE IF NOT EXISTS visitors (
+$conn->query("CREATE DATABASE IF NOT EXISTS $dbname");
+$conn->select_db($dbname);
+$conn->query("CREATE TABLE IF NOT EXISTS visitors (
     id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     visit_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)";
-if (!\$conn->query(\$tableSql)) {
-    echo "Error creating table: " . \$conn->error;
-}
-
-// 4. Insert New Data
-\$insertSql = "INSERT INTO visitors (visit_time) VALUES (NOW())";
-\$conn->query(\$insertSql);
-
-// 5. Retrieve Data
-\$result = \$conn->query("SELECT id, visit_time FROM visitors ORDER BY id DESC LIMIT 10");
+)");
+$conn->query("INSERT INTO visitors (visit_time) VALUES (NOW())");
+$result = $conn->query("SELECT id, visit_time FROM visitors ORDER BY id DESC LIMIT 10");
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -132,37 +102,37 @@ if (!\$conn->query(\$tableSql)) {
     </style>
 </head>
 <body>
-
     <h1>🚀 LAMP Stack Status</h1>
-    
     <div class="status">
         <strong>Database Connection:</strong> <span style="color: green;">Success</span><br>
         <strong>Connected to:</strong> MariaDB on localhost<br>
-        <strong>Database Name:</strong> <?php echo \$dbname; ?>
+        <strong>Database Name:</strong> <?php echo $dbname; ?>
     </div>
-
     <h2>Recent Visitor Log</h2>
     <p>Refresh this page to add a new record to the database.</p>
-
     <table>
-        <tr>
-            <th>ID</th>
-            <th>Timestamp</th>
-        </tr>
+        <tr><th>ID</th><th>Timestamp</th></tr>
         <?php
-        if (\$result->num_rows > 0) {
-            while(\$row = \$result->fetch_assoc()) {
-                echo "<tr><td>" . \$row["id"]. "</td><td>" . \$row["visit_time"]. "</td></tr>";
+        if ($result->num_rows > 0) {
+            while($row = $result->fetch_assoc()) {
+                echo "<tr><td>" . $row["id"] . "</td><td>" . $row["visit_time"] . "</td></tr>";
             }
         } else {
             echo "<tr><td colspan='2'>No results</td></tr>";
         }
-        \$conn->close();
+        $conn->close();
         ?>
     </table>
 </body>
 </html>
-EOF
+PHPEOF
 
-# 6. Restart Apache to ensure all PHP changes are picked up
+# 8. Set file permissions AFTER all files are written
+sudo usermod -a -G apache ec2-user
+sudo chown -R ec2-user:apache /var/www
+sudo chmod 2775 /var/www
+find /var/www -type d -exec sudo chmod 2775 {} \;
+find /var/www -type f -exec sudo chmod 0664 {} \;
+
+# 9. Restart Apache to pick up all changes
 sudo systemctl restart httpd
