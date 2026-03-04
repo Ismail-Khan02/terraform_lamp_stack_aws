@@ -1,7 +1,6 @@
-# Create a security group allowing HTTP and SSH access
-data "aws_ip_ranges" "cloudfront" {
-  services = ["cloudfront"]
-
+# Create a security group allowing HTTP traffic from CloudFront only
+data "aws_ec2_managed_prefix_list" "cloudfront" {
+  name = "com.amazonaws.global.cloudfront.origin-facing"
 }
 
 resource "aws_security_group" "web_sg" {
@@ -14,7 +13,7 @@ resource "aws_security_group" "web_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = data.aws_ip_ranges.cloudfront.cidr_blocks
+    cidr_blocks = [data.aws_ec2_managed_prefix_list.cloudfront.id]
   }
 
   egress {
