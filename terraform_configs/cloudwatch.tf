@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_log_group" "lamp_log_group" {
-  name              = "/aws/lamp_stack/logs"
+  name              = "/ec2/lamp/user-data"
   retention_in_days = 7
 
   tags = {
