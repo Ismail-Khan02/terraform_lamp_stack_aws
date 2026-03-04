@@ -2,7 +2,10 @@
 # 1. Update the system and install necessary packages
 # Amazon Linux 2023 uses 'dnf' instead of 'yum'
 sudo dnf update -y
-sudo dnf install -y httpd wget php-fpm php-mysqli php-json php php-devel mariadb105-server
+sudo dnf install -y httpd wget php-fpm php-mysqli php-json php php-devel mariadb105-server php-composer
+
+# Install AWS SDK for PHP (composer must be installed first via php-composer above)
+cd /var/www/html && composer require aws/aws-sdk-php
 
 # 2. Start and Enable Services (Apache & MariaDB)
 sudo systemctl start httpd
@@ -19,8 +22,16 @@ find /var/www -type d -exec sudo chmod 2775 {} \;
 find /var/www -type f -exec sudo chmod 0664 {} \;
 
 # 4. Secure the Database (Set Root Password)
-# This sets the root password to 'mypassword' to match your PHP script
-sudo mysqladmin -u root password 'mypassword'
+
+# Fetch password from Secrets Manager (region must match your provider)
+DB_PASS=$(aws secretsmanager get-secret-value \
+  --secret-id lamp/db_password \
+  --region us-east-1 \
+  --query SecretString \
+  --output text | python3 -c "import sys,json; print(json.load(sys.stdin)['password'])")
+
+# This sets the root password to $DB_PASS, which should be defined as an environment variable in Terraform
+sudo mysqladmin -u root password "$DB_PASS"
 
 # 5. Create the application file with CSS styling
 # Note: Dollar signs are escaped (\$) to prevent Bash from interpreting them
@@ -29,8 +40,20 @@ cat <<EOF | sudo tee /var/www/html/my-app.php
 // 1. Configuration
 \$servername = "localhost";
 \$username   = "root";
-\$password   = "mypassword";
 \$dbname     = "lamp_test_db";
+
+// Fetch password from AWS Secrets Manager
+require '/var/www/html/vendor/autoload.php';
+function get_db_password() {
+    \$client = new Aws\SecretsManager\SecretsManagerClient([
+        'region'  => 'us-east-1',
+        'version' => 'latest'
+    ]);
+    \$result = \$client->getSecretValue(['SecretId' => 'lamp/db_password']);
+    \$secret = json_decode(\$result['SecretString'], true);
+    return \$secret['password'];
+}
+\$password = get_db_password();
 
 // 2. Create Connection
 \$conn = new mysqli(\$servername, \$username, \$password);
