@@ -1,5 +1,6 @@
 # provider.tf
 provider "aws" {
+  alias = var.aws_region_alias
   region = var.aws_region
 }
 
