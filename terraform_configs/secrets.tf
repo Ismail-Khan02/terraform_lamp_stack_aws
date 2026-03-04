@@ -1,5 +1,5 @@
 resource "aws_secretsmanager_secret" "db_credentials" {
-  name        = "db_credentials"
+  name        = "lamp/db_password"
   description = "Database credentials for the LAMP stack"
 
   tags = {
