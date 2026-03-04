@@ -5,6 +5,12 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
+variable "aws_region_alias" {
+  description = "The alias for the AWS region provider"
+  type        = string
+  default     = "us_east_1"
+}
+
 variable "availability_zones" {
   description = "List of availability zones"
   type        = list(string)
