@@ -29,10 +29,15 @@ sudo systemctl enable amazon-cloudwatch-agent
 # 1. Update the system and install necessary packages
 # Amazon Linux 2023 uses 'dnf' instead of 'yum'
 sudo dnf update -y
-sudo dnf install -y httpd wget php-fpm php-mysqli php-json php php-devel mariadb105-server php-composer
+sudo dnf install -y httpd wget php-fpm php-mysqli php-json php php-devel mariadb105-server
 
-# Install AWS SDK for PHP (composer must be installed first via php-composer above)
-cd /var/www/html && composer require aws/aws-sdk-php
+# Install Composer manually since it's not available in the default repos
+curl -sS https://getcomposer.org/installer | php
+sudo mv composer.phar /usr/local/bin/composer
+sudo chmod +x /usr/local/bin/composer
+
+# Install AWS SDK for PHP
+cd /var/www/html && composer require aws/aws-sdk-php --no-interaction
 
 # 2. Start and Enable Services (Apache & MariaDB)
 sudo systemctl start httpd
