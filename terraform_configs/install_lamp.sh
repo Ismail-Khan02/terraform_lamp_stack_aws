@@ -33,8 +33,11 @@ sudo dnf install -y httpd wget php-fpm php-mysqli php-json php php-devel mariadb
 # 2. Start Apache and MariaDB early so /var/www/html exists for Composer
 sudo systemctl start httpd
 sudo systemctl enable httpd
+sudo systemctl start php-fpm
+sudo systemctl enable php-fpm
 sudo systemctl start mariadb
 sudo systemctl enable mariadb
+
 
 # 3. Install Composer
 export HOME=/root
