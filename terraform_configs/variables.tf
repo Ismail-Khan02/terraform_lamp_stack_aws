@@ -38,4 +38,8 @@ variable "key_name" {
   default     = "my-key-pair"
 }
 
-
+variable "db_password" {
+  description = "Password for the database user"
+  type        = string
+  sensitive   = true
+}
