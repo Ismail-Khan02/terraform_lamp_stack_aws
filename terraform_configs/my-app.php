@@ -3,8 +3,20 @@
 // These match the credentials set in your install_lamp.sh
 $servername = "localhost";
 $username   = "root";
-$password   = "mypassword";
 $dbname     = "lamp_test_db";
+
+// Fetch password from AWS Secrets Manager
+function get_db_password() {
+    $client = new Aws\SecretsManager\SecretsManagerClient([
+        'region'  => 'us-east-1',
+        'version' => 'latest'
+    ]);
+    $result = $client->getSecretValue(['SecretId' => 'lamp/db_password']);
+    $secret = json_decode($result['SecretString'], true);
+    return $secret['password'];
+}
+
+$password = get_db_password();
 
 // 2. Create Connection
 $conn = new mysqli($servername, $username, $password);
